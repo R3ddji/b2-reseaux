@@ -296,7 +296,6 @@ dns1 IN  A   10.3.1.20
 ;
 ;client records
 router IN  A   10.3.1.126
-
 ```
 ```
 [leo@dns1 ~]$ sudo cat /var/named/server2.tp3.forward
@@ -633,24 +632,96 @@ success
 🖥️ **VM nfs1.server2.tp3**
 
 🌞 **Setup d'une nouvelle machine, qui sera un serveur NFS**
-
-- réseau `server2`
-- son nooooom : `nfs1.server2.tp3` !
-- [📝**checklist**📝](#checklist)
-- je crois que vous commencez à connaître la chanson... Google "nfs server rocky linux"
-  - [ce lien me semble être particulièrement simple et concis](https://www.server-world.info/en/note?os=Rocky_Linux_8&p=nfs&f=1)
-- **vous partagerez un dossier créé à cet effet : `/srv/nfs_share/`**
+```
+[leo@nfs1 ~]$ hostname
+nfs1.server2.tp3
+```
+```
+[leo@nfs1 ~]$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: enp0s8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 08:00:27:51:f3:98 brd ff:ff:ff:ff:ff:ff
+    inet 10.3.1.199/28 brd 10.3.1.207 scope global noprefixroute enp0s8
+       valid_lft forever preferred_lft forever
+    inet6 fe80::a00:27ff:fe51:f398/64 scope link
+       valid_lft forever preferred_lft forever
+```
+```
+[leo@nfs1 ~]$ sudo dnf install nfs-utils
+```
+```
+[leo@nfs1 ~]$ sudo cat /etc/idmapd.conf
+[...]
+Domain = server2.tp3
+[...]
+```
+```
+[leo@nfs1 srv]$ sudo mkdir nfs_share
+```
+```
+[leo@nfs1 srv]$ sudo cat /etc/exports
+/srv/nfs_share 10.3.1.199/28(rw,no_root_squash)
+```
+```
+[leo@nfs1 srv]$ sudo systemctl enable rpcbind nfs-server
+Created symlink /etc/systemd/system/multi-user.target.wants/nfs-server.service → /usr/lib/systemd/system/nfs-server.service.
+```
+```
+[leo@nfs1 srv]$ sudo firewall-cmd --add-service=nfs --permanent
+success
+```
+```
+[leo@nfs1 srv]$ sudo chown leo nfs_share/
+```
 
 🌞 **Configuration du client NFS**
+```
+[leo@web1 ~]$ sudo dnf install nfs-utils
+```
+```
+[leo@web1 ~]$ sudo cat /etc/idmapd.conf
+[...]
+Domain = server2.tp3
+[...]
+```
+```
+[leo@web1 ~]$ sudo mkdir /srv/nfs
+```
+```
+[leo@web1 ~]$ sudo mount -t nfs nfs1.server2.tp3:/srv/nfs_share /srv/nfs
+```
+```
+[leo@web1 ~]$ df -hT
+Filesystem          Type      Size  Used Avail Use% Mounted on
+devtmpfs            devtmpfs  890M     0  890M   0% /dev
+tmpfs               tmpfs     909M     0  909M   0% /dev/shm
+tmpfs               tmpfs     909M  8.5M  901M   1% /run
+tmpfs               tmpfs     909M     0  909M   0% /sys/fs/cgroup
+/dev/mapper/rl-root xfs       6.2G  1.9G  4.4G  31% /
+/dev/sda1           xfs      1014M  182M  833M  18% /boot
+tmpfs               tmpfs     182M     0  182M   0% /run/user/1000
+```
 
-- effectuez de la configuration sur `web1.server2.tp3` pour qu'il accède au partage NFS
-- le partage NFS devra être monté dans `/srv/nfs/`
-- [sur le même site, y'a ça](https://www.server-world.info/en/note?os=Rocky_Linux_8&p=nfs&f=2)
+```
+[leo@web1 ~]$ cat /etc/fstab
+[...]
+nfs1.server2.tp3:/srv/nfs_share /srv/nfs        nfs     defaults        0 0
+```
 
 🌞 **TEEEEST**
 
-- tester que vous pouvez lire et écrire dans le dossier `/srv/nfs` depuis `web1.server2.tp3`
-- vous devriez voir les modifications du côté de  `nfs1.server2.tp3` dans le dossier `/srv/nfs_share/`
+```
+[leo@web1 ~]$ touch /srv/nfs/test
+```
+```
+[leo@nfs1 nfs_share]$ ls
+test
+```
 
 # IV. Un peu de théorie : TCP et UDP
 
