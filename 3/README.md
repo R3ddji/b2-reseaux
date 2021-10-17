@@ -110,7 +110,7 @@ subnet 10.3.1.130 netmask 255.255.255.192 {
   range 10.3.1.130 10.3.1.189;
   option routers 10.3.1.190;
   option subnet-mask 255.255.255.192;
-  option domain-name-servers 10.3.1.20;
+  option domain-name-servers 1.1.1.1;
  
 }
 ```
@@ -402,21 +402,115 @@ nameserver 10.3.1.20
 
 ## 3. Get deeper
 
-On va affiner un peu la configuration des outils mis en place.
-
 ### A. DNS forwarder
 
 🌞 **Affiner la configuration du DNS**
+```
+[root@dns1 named]# sudo cat /etc/named.conf
 
-- faites en sorte que votre DNS soit désormais aussi un forwarder DNS
-- c'est à dire que s'il ne connaît pas un nom, il ira poser la question à quelqu'un d'autre
+options {
+        listen-on port 53 { any; };
+        listen-on-v6 port 53 { any; };
+        directory "/var/named";
+        dump-file "/var/named/data/cache_dump.db";
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+        secroots-file   "/var/named/data/named.secroots";
+        recursing-file  "/var/named/data/named.recursing";
+        allow-query     { any; };
 
-> Hint : c'est la clause `recursion` dans le fichier `/etc/named.conf`. Et c'est déjà activé par défaut en fait.
+        /*
+         - If you are building an AUTHORITATIVE DNS server, do NOT enable recursion.
+         - If you are building a RECURSIVE (caching) DNS server, you need to enable
+           recursion.
+         - If your recursive DNS server has a public IP address, you MUST enable access
+           control to limit queries to your legitimate users. Failing to do so will
+           cause your server to become part of large scale DNS amplification
+           attacks. Implementing BCP38 within your network would greatly
+           reduce such attack surface
+        */
+        recursion yes;
 
+        dnssec-enable yes;
+        dnssec-validation yes;
+
+        managed-keys-directory "/var/named/dynamic";
+
+        pid-file "/run/named/named.pid";
+        session-keyfile "/run/named/session.key";
+
+        /* https://fedoraproject.org/wiki/Changes/CryptoPolicy */
+        include "/etc/crypto-policies/back-ends/bind.config";
+};
+
+logging {
+        channel default_debug {
+                file "data/named.run";
+                severity dynamic;
+        };
+};
+
+zone "." IN {
+        type hint;
+        file "named.ca";
+};
+
+zone "server1.tp3" IN {
+        type master;
+        file "/var/named/server1.tp3.forward";
+        allow-update { none; };
+};
+
+zone "server2.tp3" IN {
+        type master;
+        file "/var/named/server2.tp3.forward";
+        allow-update { none; };
+
+};
+
+include "/etc/named.rfc1912.zones";
+include "/etc/named.root.key";
+```
 🌞 Test !
+```
+[leo@marcel ~]$ dig google.com
 
-- vérifier depuis `marcel.client1.tp3` que vous pouvez résoudre des noms publics comme `google.com` en utilisant votre propre serveur DNS (commande `dig`)
-- pour que ça fonctionne, il faut que `dns1.server1.tp3` soit lui-même capable de résoudre des noms, avec `1.1.1.1` par exemple
+; <<>> DiG 9.11.26-RedHat-9.11.26-4.el8_4 <<>> google.com
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 52199
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 4, ADDITIONAL: 9
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+; COOKIE: 7393cbbde07e6ba68aa3e6e6616c6f8b78b72539fe9d8b39 (good)
+;; QUESTION SECTION:
+;google.com.                    IN      A
+
+;; ANSWER SECTION:
+google.com.             300     IN      A       142.250.74.238
+
+;; AUTHORITY SECTION:
+google.com.             172109  IN      NS      ns3.google.com.
+google.com.             172109  IN      NS      ns2.google.com.
+google.com.             172109  IN      NS      ns4.google.com.
+google.com.             172109  IN      NS      ns1.google.com.
+
+;; ADDITIONAL SECTION:
+ns2.google.com.         172109  IN      A       216.239.34.10
+ns1.google.com.         172109  IN      A       216.239.32.10
+ns3.google.com.         172109  IN      A       216.239.36.10
+ns4.google.com.         172109  IN      A       216.239.38.10
+ns2.google.com.         172109  IN      AAAA    2001:4860:4802:34::a
+ns1.google.com.         172109  IN      AAAA    2001:4860:4802:32::a
+ns3.google.com.         172109  IN      AAAA    2001:4860:4802:36::a
+ns4.google.com.         172109  IN      AAAA    2001:4860:4802:38::a
+
+;; Query time: 34 msec
+;; SERVER: 10.3.1.20#53(10.3.1.20)
+;; WHEN: Sun Oct 17 20:46:36 CEST 2021
+;; MSG SIZE  rcvd: 331
+```
 
 ### B. On revient sur la conf du DHCP
 
@@ -424,42 +518,51 @@ On va affiner un peu la configuration des outils mis en place.
 
 🌞 **Affiner la configuration du DHCP**
 
-- faites en sorte que votre DHCP donne désormais l'adresse de votre serveur DNS aux clients
-- créer un nouveau client `johnny.client1.tp3` qui récupère son IP, et toutes les nouvelles infos, en DHCP
+```
+[leo@dhcp ~]$ sudo cat /etc/dhcp/dhcpd.conf
+default-lease-time 900;
+max-lease-time 10800;
+ddns-update-style none;
+authoritative;
+subnet 10.3.1.130 netmask 255.255.255.192 {
+  range 10.3.1.130 10.3.1.189;
+  option routers 10.3.1.190;
+  option subnet-mask 255.255.255.192;
+  option domain-name-servers 10.3.1.20;
+ 
+}
+```
+```
+[leo@johnny ~]$ sudo cat /etc/sysconfig/network-scripts/ifcfg-enp0s8
+[sudo] password for leo:
+NAME=enp0s8
+DEVICE=enp0s8
 
----
-
-# Entracte
-
-**YO !**
-
-**On se pose deux minutes pour apprécier le travail réalisé.**
-
-A ce stade vous avez :
-
-- un routeur qui permet aux machines d'acheminer leur trafic entre les réseaux
-  - entre les LANs
-  - vers internet
-- un DHCP qui filent des infos à vos clients
-  - une IP, une route par défaut, l'adresse d'un DNS
-- un DNS
-  - qui résout tous les noms localement
-
-Vous le sentez là que ça commence à prendre forme oupa ? Tous les réseaux du monde sont fichus comme ça c:
-
-**Allez, prend un cookie tu l'as mérité : 🍪**
-
-![You get a cookie](./pic/you-get-a-cookie-ricky-berwick.gif "You get a cookie")
-
+BOOTPROTO=dhcp
+ONBOOT=yes
+```
+```
+[leo@johnny ~]$ sudo dhclient
+```
+```
+[leo@johnny ~]$ sudo cat /etc/resolv.conf
+# Generated by NetworkManager
+search client1.tp3
+nameserver 10.3.1.20
+```
+```
+[leo@johnny ~]$ ping google.com
+PING google.com (142.250.74.238) 56(84) bytes of data.
+64 bytes from par10s40-in-f14.1e100.net (142.250.74.238): icmp_seq=1 ttl=117 time=30.2 ms
+64 bytes from par10s40-in-f14.1e100.net (142.250.74.238): icmp_seq=2 ttl=117 time=15.2 ms
+^C
+--- google.com ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1002ms
+rtt min/avg/max/mdev = 15.178/22.685/30.193/7.509 ms
+```
 ---
 
 # III. Services métier
-
-Ce qu'on appelle un "service métier", à l'inverse du service d'infra, c'est un truc que l'utilisateur final veut consommer. On le dit "métier" car dans une entreprise, c'est ce service qui sert le métier de l'entreprise, son coeur d'activité.
-
-Par exemple, pour une agence de développement web, l'un des services métier, bah c'est les serveurs web qui sont déployés pour porter les sites web développés par la boîte.
-
-> On est en 2021, le serveur web c'est le cas d'école. Y'en a partout. Mais genre + que vous imaginez, même nous les admins, on utilise de plus en plus d'interfaces web, au détriment de la ligne de commande.
 
 ## 1. Serveur Web
 
