@@ -569,43 +569,64 @@ rtt min/avg/max/mdev = 15.178/22.685/30.193/7.509 ms
 🖥️ **VM web1.server2.tp3**
 
 🌞 **Setup d'une nouvelle machine, qui sera un serveur Web, une belle appli pour nos clients**
-
-- réseau `server2`
-- hello `web1.server2.tp3` !
-- [📝**checklist**📝](#checklist)
-- vous utiliserez le serveur web que vous voudrez, le but c'est d'avoir un serveur web fast, pas d'y passer 1000 ans :)
-  - réutilisez [votre serveur Web du TP1 Linux](https://gitlab.com/it4lik/b2-linux-2021/-/tree/main/tp/1#2-cr%C3%A9ation-de-service)
-  - ou montez un bête NGINX avec la page d'accueil (ça se limite à un `dnf install` puis `systemctl start nginx`)
-  - ou ce que vous voulez, du moment que c'est fast
-  - **dans tous les cas, n'oubliez pas d'ouvrir le port associé dans le firewall** pour que le serveur web soit joignable
-
-> Une bête page HTML fera l'affaire. On est pas là pour faire du design. Et vous prenez pas la tête pour l'install, appelez-moi vite s'il faut, on est pas en système ni en Linux non plus. On est en réseau, on veut juste un serveur web derrière un port :)
+```
+[leo@web1 ~]$ hostname
+web1.server2.tp3
+```
+```
+[leo@web1 ~]$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: enp0s8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 08:00:27:57:e8:8f brd ff:ff:ff:ff:ff:ff
+    inet 10.3.1.195/28 brd 10.3.1.207 scope global noprefixroute enp0s8
+       valid_lft forever preferred_lft forever
+    inet6 fe80::a00:27ff:fe57:e88f/64 scope link
+       valid_lft forever preferred_lft forever
+```
+```
+[leo@web1 ~]$ sudo dnf install nginx
+```
+```
+[leo@web1 ~]$ sudo systemctl start nginx
+```
+```
+[leo@web1 ~]$ sudo systemctl enable nginx
+Created symlink /etc/systemd/system/multi-user.target.wants/nginx.service → /usr/lib/systemd/system/nginx.service.
+```
+```
+[leo@web1 ~]$ sudo firewall-cmd --add-port=80/tcp --permanent
+success
+```
 
 🌞 **Test test test et re-test**
 
-- testez que votre serveur web est accessible depuis `marcel.client1.tp3`
-  - utilisez la commande `curl` pour effectuer des requêtes HTTP
+```
+[leo@marcel ~]$ curl web1.server2.tp3
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+    <title>Test Page for the Nginx HTTP Server on Rocky Linux</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style type="text/css">
+      /*<![CDATA[*/
+      body {
+        background-color: #fff;
+        color: #000;
+        font-size: 0.9em;
+        font-family: sans-serif, helvetica;
+        margin: 0;
+        padding: 0;
+```
 
 ---
 
-👋👋👋 **HEY ! C'est beau là.** On a un client qui consomme un serveur web, avec toutes les infos récupérées en DHCP, DNS, blablabla + un routeur maison.  
-
-Je sais que ça se voit pas trop avec les `curl`. Vous pourriez installer un Ubuntu graphique sur le client si vous voulez vous y croire à fond, avec un ptit Firefox, Google Chrome ou whatever.  
-
-**Mais là on y est**, vous avez un ptit réseau, un vrai, avec tout ce qu'il faut.
-
 ## 2. Partage de fichiers
-
-### A. L'introduction wola
-
-Dans cette partie, on va monter un serveur NFS. C'est un serveur qui servira à partager des fichiers à travers le réseau.  
-
-**En d'autres termes, certaines machines pourront accéder à un dossier, à travers le réseau.**
-
-Dans notre cas, on va faire en sorte que notre serveur web `web1.server2.tp3` accède à un partage de fichier.
-
-> Dans un cas réel, ce partage de fichiers peut héberger le site web servi par notre serveur Web par exemple.  
-Ou, de manière plus récurrente, notre serveur Web peut effectuer des sauvegardes dans ce dossier. Ainsi, le serveur de partage de fichiers devient le serveur qui centralise les sauvegardes.
 
 ### B. Le setup wola
 
