@@ -65,6 +65,10 @@ rtt min/avg/max/mdev = 20.598/21.048/21.658/0.477 ms
 router.tp3
 ```
 ```
+[leo@router ~]$ dig | grep ";; SERVER"
+;; SERVER: 192.168.0.254#53(192.168.0.254)
+```
+```
 [leo@router ~]$ sudo firewall-cmd --add-masquerade --zone=public --permanent
 ```
 
@@ -106,7 +110,7 @@ subnet 10.3.1.130 netmask 255.255.255.192 {
   range 10.3.1.130 10.3.1.189;
   option routers 10.3.1.190;
   option subnet-mask 255.255.255.192;
-  option domain-name-servers 10.3.120;
+  option domain-name-servers 10.3.1.20;
  
 }
 ```
@@ -117,8 +121,6 @@ subnet 10.3.1.130 netmask 255.255.255.192 {
 [leo@dhcp ~]$ sudo systemctl enable dhcpd
 ```
 📁 **Fichier `dhcpd.conf`**
-
----
 
 🖥️ **VM marcel.client1.tp3**
 
@@ -152,20 +154,12 @@ BOOTPROTO=dhcp
 ONBOOT=yes
 ```
 ```
+[leo@marcel ~]$ sudo dhclient
+```
+```
 [leo@marcel ~]$ sudo cat /etc/sysconfig/network
 GATEWAY=10.3.1.190
-```1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
-    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-    inet 127.0.0.1/8 scope host lo
-       valid_lft forever preferred_lft forever
-    inet6 ::1/128 scope host 
-       valid_lft forever preferred_lft forever
-2: enp0s8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
-    link/ether 08:00:27:d6:23:7a brd ff:ff:ff:ff:ff:ff
-    inet 10.3.1.130/26 brd 10.3.1.191 scope global noprefixroute enp0s8
-       valid_lft forever preferred_lft forever
-    inet6 fe80::a00:27ff:fed6:237a/64 scope link 
-       valid_lft forever preferred_lft forever
+```
 ```
 [leo@marcel ~]$ sudo cat /etc/resolv.conf
 nameserver 1.1.1.1
@@ -221,15 +215,6 @@ nameserver 1.1.1.1
 ```
 ```
 [leo@dns1 ~]$ sudo cat /etc/named.conf
-//
-// named.conf
-//
-// Provided by Red Hat bind package to configure the ISC BIND named(8) DNS
-// server as a caching only nameserver (as a localhost DNS resolver only).
-//
-// See /usr/share/doc/bind*/sample/ for example named configuration files.
-//
-
 options {
         listen-on port 53 { any; };
         listen-on-v6 port 53 { any; };
@@ -332,27 +317,88 @@ dns1 IN  A   10.3.1.20
 ;client records
 router IN  A   10.3.1.206
 ```
+```
+[root@dns1 named]# sudo systemctl enable named
+Created symlink /etc/systemd/system/multi-user.target.wants/named.service → /usr/lib/systemd/system/named.service.
+```
+```
+[root@dns1 named]# sudo systemctl start named
+```
 🌞 **Tester le DNS depuis `marcel.client1.tp3`**
 ```
 [leo@marcel ~]$ sudo cat /etc/resolv.conf
 nameserver 10.3.1.20
 ```
-- essayez une résolution de nom avec `dig`
-  - une résolution de nom classique
-    - `dig <NOM>` pour obtenir l'IP associée à un nom
-    - on teste la zone forward
-- prouvez que c'est bien votre serveur DNS qui répond pour chaque `dig`
+```
+[leo@marcel ~]$ dig google.com
 
-> Pour rappel, avec `dig`on peut préciser directement sur la ligne de commande à quel serveur poser la question avec  le caractère `@`. Par exemple `dig google.com @8.8.8.8` permet de préciser explicitement qu'on veut demander à `8.8.8.8` à quelle IP se trouve `google.com`.
+; <<>> DiG 9.11.26-RedHat-9.11.26-4.el8_4 <<>> google.com
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 38306
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 4, ADDITIONAL: 9
 
-⚠️ **NOTE : A partir de maintenant, vous devrez modifier les fichiers de zone pour chaque nouvelle machine ajoutée (voir [📝**checklist**📝](#checklist).**
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+; COOKIE: 196a40b387f68782a9a232cf616c6d1e2ad6ff4f807fbfed (good)
+;; QUESTION SECTION:
+;google.com.                    IN      A
+
+;; ANSWER SECTION:
+google.com.             230     IN      A       142.250.74.238
+
+;; AUTHORITY SECTION:
+google.com.             172730  IN      NS      ns4.google.com.
+google.com.             172730  IN      NS      ns2.google.com.
+google.com.             172730  IN      NS      ns3.google.com.
+google.com.             172730  IN      NS      ns1.google.com.
+
+;; ADDITIONAL SECTION:
+ns2.google.com.         172730  IN      A       216.239.34.10
+ns1.google.com.         172730  IN      A       216.239.32.10
+ns3.google.com.         172730  IN      A       216.239.36.10
+ns4.google.com.         172730  IN      A       216.239.38.10
+ns2.google.com.         172730  IN      AAAA    2001:4860:4802:34::a
+ns1.google.com.         172730  IN      AAAA    2001:4860:4802:32::a
+ns3.google.com.         172730  IN      AAAA    2001:4860:4802:36::a
+ns4.google.com.         172730  IN      AAAA    2001:4860:4802:38::a
+
+;; Query time: 1 msec
+;; SERVER: 10.3.1.20#53(10.3.1.20)
+;; WHEN: Sun Oct 17 20:36:15 CEST 2021
+;; MSG SIZE  rcvd: 331
+```
+```
+[leo@marcel ~]$ dig dn1.server1.tp3
+
+; <<>> DiG 9.11.26-RedHat-9.11.26-4.el8_4 <<>> dn1.server1.tp3
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 35862
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+; COOKIE: 2f765297c3aa75e088a95d01616c6d63ccdeb0809b8cced1 (good)
+;; QUESTION SECTION:
+;dn1.server1.tp3.               IN      A
+
+;; AUTHORITY SECTION:
+server1.tp3.            86400   IN      SOA     dns1.server1.tp3. admin.server1.tp3. 2021062301 3600 1800 604800 86400
+
+;; Query time: 1 msec
+;; SERVER: 10.3.1.20#53(10.3.1.20)
+;; WHEN: Sun Oct 17 20:37:24 CEST 2021
+;; MSG SIZE  rcvd: 119
+```
 
 🌞 Configurez l'utilisation du serveur DNS sur TOUS vos noeuds
-
-- les serveurs, on le fait à la main
-- les clients, c'est fait *via* DHCP
-
-⚠️**A partir de maintenant, vous n'utiliserez plus DU TOUT les IPs pour communiquer entre vos machines, mais uniquement leurs noms.**
+```
+[leo@dhcp ~]$ sudo cat /etc/resolv.conf
+# Generated by NetworkManager
+search client1.tp3
+nameserver 10.3.1.20
+```
 
 ## 3. Get deeper
 
