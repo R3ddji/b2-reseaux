@@ -405,7 +405,7 @@ nameserver 10.3.1.20
 
 🌞 **Affiner la configuration du DNS**
 ```
-[root@dns1 named]# sudo cat /etc/named.conf
+[leo@dns1 named]# sudo cat /etc/named.conf
 
 options {
         listen-on port 53 { any; };
