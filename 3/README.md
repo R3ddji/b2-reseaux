@@ -1,14 +1,6 @@
 # TP3 : Progressons vers le réseau d'infrastructure
 
 ## I. (mini)Architecture réseau
-
-### 1. Adressage
-
-| Nom du réseau | Adresse du réseau | Masque            | Nombre de clients possibles | Adresse passerelle | [Adresse broadcast]|
-|---------------|-------------------|-------------------|-----------------------------|--------------------|--------------------|
-| `client1`     | `10.3.1.128`      | `255.255.255.192` | 62                          | `10.3.1.190`       | `10.3.1.191`       |
-| `server1`     | `10.3.1.0`        | `255.255.255.128` | 125                         | `10.3.2.126`       | `10.3.1.127`       |
-| `server2`     | `10.3.1.192`      | `255.255.255.240` | 14                          | `10.3.3.206`       | `10.3.1.207`       |
  
 ### 2. Routeur
 
@@ -725,8 +717,6 @@ test
 
 # IV. Un peu de théorie : TCP et UDP
 
-Bon bah avec tous ces services, on a de la matière pour bosser sur TCP et UDP. P'tite partie technique pure avant de conclure.
-
 🌞 **Déterminer, pour chacun de ces protocoles, s'ils sont encapsulés dans du TCP ou de l'UDP :**
 
 - SSH
@@ -748,24 +738,18 @@ Bon bah avec tous ces services, on a de la matière pour bosser sur TCP et UDP. 
 
 🌞 **Bah j'veux un schéma.**
 
-- réalisé avec l'outil de votre choix
-- un schéma clair qui représente
-  - les réseaux
-    - les adresses de réseau devront être visibles
-  - toutes les machines, avec leurs noms
-  - devront figurer les IPs de toutes les interfaces réseau du schéma
-  - pour les serveurs : une indication de quel port est ouvert
-- vous représenterez les host-only comme des switches
-- dans le rendu, mettez moi ici à la fin :
-  - le schéma
-  - le 🗃️ tableau des réseaux 🗃️
-  - le 🗃️ tableau d'adressage 🗃️
-    - on appelle ça aussi un "plan d'adressage IP" :)
+| Nom du réseau | Adresse du réseau | Masque            | Nombre de clients possibles | Adresse passerelle | [Adresse broadcast]|
+|---------------|-------------------|-------------------|-----------------------------|--------------------|--------------------|
+| `client1`     | `10.3.1.128`      | `255.255.255.192` | 62                          | `10.3.1.190`       | `10.3.1.191`       |
+| `server1`     | `10.3.1.0`        | `255.255.255.128` | 125                         | `10.3.2.126`       | `10.3.1.127`       |
+| `server2`     | `10.3.1.192`      | `255.255.255.240` | 14                          | `10.3.3.206`       | `10.3.1.207`       |
 
-> J'vous le dis direct, un schéma moche avec Paint c'est -5 Points. Je vous recommande [draw.io](http://draw.io).
-
-🌞 **Et j'veux des fichiers aussi, tous les fichiers de conf du DNS**
-
-- 📁 Fichiers de zone
-- 📁 Fichier de conf principal DNS `named.conf`
-- faites ça à peu près propre dans le rendu, que j'ai plus qu'à cliquer pour arriver sur le fichier ce serait top
+| Machine              | `client1`                     | `server1`            | `server2`            | Passerelle            |
+| -------------------- | ----------------------------- | -------------------- | -------------------- | --------------------- |
+| `router.tp3`         | `10.3.1.190/26`               | `10.3.1.126/25`      | `10.3.1.206/28`      | Carte NAT             |
+| `dns1.server1.tp3`   | ...                           | `10.3.1.20/25`       | ...                  | `10.3.1.126/25`       |
+| `web1.server2.tp3`   | ...                           | ...                  | `10.3.1.195/28`      | `10.3.1.206/28`       |
+| `nfs1.server2.tp3`   | ...                           | ...                  | `10.3.1.199/28`      | `10.3.1.206/28`       |
+| `dhcp.client1.tp3`   | `10.3.1.130/26`               | ...                  | ...                  | `10.3.1.190/26`       |
+| `marcel.client1.tp3` | `10.3.1.132/26`               | ...                  | ...                  | `10.3.1.190/26`       |
+| `johnny.client1.tp3` | `10.3.1.133/26`               | ...                  | ...                  | `10.3.1.190/26`       |
