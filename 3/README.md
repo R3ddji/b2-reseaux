@@ -329,11 +329,11 @@ dns1 IN  A   10.3.1.20
 router IN  A   10.3.1.206
 ```
 ```
-[root@dns1 named]# sudo systemctl enable named
+[leo@dns1 named]# sudo systemctl enable named
 Created symlink /etc/systemd/system/multi-user.target.wants/named.service → /usr/lib/systemd/system/named.service.
 ```
 ```
-[root@dns1 named]# sudo systemctl start named
+[leo@dns1 named]# sudo systemctl start named
 ```
 🌞 **Tester le DNS depuis `marcel.client1.tp3`**
 ```
