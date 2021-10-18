@@ -739,7 +739,7 @@ test
 
 🌞 **Bah j'veux un schéma.**
 
-![]("img/schema.PNG")
+![](img/schema.PNG)
 
 | Nom du réseau | Adresse du réseau | Masque            | Nombre de clients possibles | Adresse passerelle | [Adresse broadcast]|
 |---------------|-------------------|-------------------|-----------------------------|--------------------|--------------------|
