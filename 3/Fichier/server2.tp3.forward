@@ -1,0 +1,17 @@
+$TTL 86400
+@   IN  SOA dns1.server1.tp3. admin.server1.tp3. (
+        2021062301   ; serial
+        3600         ; refresh
+        1800         ; retry
+        604800       ; expire
+        86400 )      ; minimum TTL
+;
+; define nameservers
+    IN  NS  dns1.server1.tp3.
+;
+; DNS Server IP addresses and hostnames
+dns1 IN  A   10.3.1.20
+;
+;client records
+router IN  A   10.3.1.206
+
