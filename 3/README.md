@@ -677,7 +677,7 @@ Domain = server2.tp3
 ```
 ```
 [leo@nfs1 srv]$ sudo cat /etc/exports
-/srv/nfs_share 10.3.1.199/28(rw,no_root_squash)
+/srv/nfs_share 10.3.1.192/28(rw,no_root_squash)
 ```
 ```
 [leo@nfs1 srv]$ sudo systemctl enable rpcbind nfs-server
