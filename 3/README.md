@@ -738,6 +738,8 @@ test
 
 🌞 **Bah j'veux un schéma.**
 
+![]("img/schema.PNG")
+
 | Nom du réseau | Adresse du réseau | Masque            | Nombre de clients possibles | Adresse passerelle | [Adresse broadcast]|
 |---------------|-------------------|-------------------|-----------------------------|--------------------|--------------------|
 | `client1`     | `10.3.1.128`      | `255.255.255.192` | 62                          | `10.3.1.190`       | `10.3.1.191`       |
