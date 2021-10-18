@@ -1,5 +1,25 @@
 # TP3 : Progressons vers le réseau d'infrastructure
 
+# Sommaire
+
+- [TP3 : Progressons vers le réseau d'infrastructure](#tp3--progressons-vers-le-réseau-dinfrastructure)
+- [Sommaire](#sommaire)
+- [I. (mini)Architecture réseau](#i-miniarchitecture-réseau)
+  - [2. Routeur](#2-routeur)
+- [II. Services d'infra](#ii-services-dinfra)
+  - [1. Serveur DHCP](#1-serveur-dhcp)
+  - [2. Serveur DNS](#2-serveur-dns)
+    - [B. SETUP copain](#b-setup-copain)
+  - [3. Get deeper](#3-get-deeper)
+    - [A. DNS forwarder](#a-dns-forwarder)
+    - [B. On revient sur la conf du DHCP](#b-on-revient-sur-la-conf-du-dhcp)
+- [III. Services métier](#iii-services-métier)
+  - [1. Serveur Web](#1-serveur-web)
+  - [2. Partage de fichiers](#2-partage-de-fichiers)
+    - [B. Le setup wola](#b-le-setup-wola)
+- [V. El final](#v-el-final)
+
+
 ## I. (mini)Architecture réseau
  
 ### 2. Routeur
@@ -714,25 +734,6 @@ nfs1.server2.tp3:/srv/nfs_share /srv/nfs        nfs     defaults        0 0
 [leo@nfs1 nfs_share]$ ls
 test
 ```
-
-# IV. Un peu de théorie : TCP et UDP
-
-🌞 **Déterminer, pour chacun de ces protocoles, s'ils sont encapsulés dans du TCP ou de l'UDP :**
-
-- SSH
-- HTTP
-- DNS
-- NFS
-
-📁 **Captures réseau `tp3_ssh.pcap`, `tp3_http.pcap`, `tp3_dns.pcap` et `tp3_nfs.pcap`**
-
-> **Prenez le temps** de réfléchir à pourquoi on a utilisé TCP ou UDP pour transmettre tel ou tel protocole. Réfléchissez à quoi servent chacun de ces protocoles, et de ce qu'on a besoin qu'ils réalisent.
-
-🌞 **Expliquez-moi pourquoi je ne pose pas la question pour DHCP.**
-
-🌞 **Capturez et mettez en évidence un *3-way handshake***
-
-📁 **Capture réseau `tp3_3way.pcap`**
 
 # V. El final
 
